@@ -7,6 +7,8 @@ import { Badge } from '../ui/badge';
 import { Skeleton } from '../ui/skeleton';
 import { ClipboardList, Check, X, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { MessageCircle, Printer } from 'lucide-react';
+import { buildReceiptText, printReceipt, whatsappReceiptUrl } from '../../lib/receipt';
 
 export default function Orders({ store }: { store: Store }) {
   const [orders, setOrders] = useState<Transaction[]>([]);
@@ -70,7 +72,14 @@ export default function Orders({ store }: { store: Store }) {
       toast.error('Gagal mengonfirmasi pesanan');
       return;
     }
-    toast.success('Pesanan dikonfirmasi, stok diperbarui');
+    printReceipt(store, t);
+    toast.success('Pesanan dikonfirmasi. Nota pembelian terbuka untuk dicetak.', {
+      action: {
+        label: 'WhatsApp',
+        onClick: () => window.open(whatsappReceiptUrl(store, t), '_blank'),
+      },
+      duration: 12000,
+    });
   }
 
   async function rejectOrder(t: Transaction) {
@@ -182,9 +191,29 @@ export default function Orders({ store }: { store: Store }) {
                     </p>
                   </div>
                   {o.status === 'confirmed' ? (
-                    <Badge className="bg-success/15 text-success hover:bg-success/25">
-                      <Check className="mr-1 h-3 w-3" /> Dikonfirmasi
-                    </Badge>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        aria-label="Cetak nota"
+                        title="Cetak nota"
+                        onClick={() => printReceipt(store, o)}
+                      >
+                        <Printer className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        aria-label="Bagikan ke WhatsApp"
+                        title="Bagikan ke WhatsApp"
+                        onClick={() => window.open(whatsappReceiptUrl(store, o), '_blank')}
+                      >
+                        <MessageCircle className="h-4 w-4" />
+                      </Button>
+                      <Badge className="bg-success/15 text-success hover:bg-success/25">
+                        <Check className="mr-1 h-3 w-3" /> Dikonfirmasi
+                      </Badge>
+                    </div>
                   ) : o.status === 'rejected' ? (
                     <Badge variant="destructive">
                       <X className="mr-1 h-3 w-3" /> Ditolak
