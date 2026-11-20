@@ -5,6 +5,7 @@ export interface Store {
   owner_code: string;
   username: string;
   password: string;
+  monthly_report_reset_at: string | null;
   created_at: string;
 }
 
@@ -16,6 +17,7 @@ export interface Product {
   modal_price: number;
   stock: number;
   category: string | null;
+  image_url: string | null;
   sold_count: number;
   created_at: string;
 }
@@ -49,6 +51,11 @@ export interface Transaction {
   source: 'owner' | 'customer';
   status: 'pending' | 'confirmed' | 'done' | 'rejected';
   created_at: string;
+}
+
+export interface ClosedTransaction extends Omit<Transaction, 'id'> {
+  id: string;
+  archived_at: string;
 }
 
 export const TOKEN_KEY = 'didkasir_owner_token';

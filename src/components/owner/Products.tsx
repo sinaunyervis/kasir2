@@ -14,7 +14,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '../ui/dialog';
-import { PackagePlus, Search, Pencil, Loader2, Package } from 'lucide-react';
+import { PackagePlus, Search, Pencil, Loader2, Package, ImageIcon, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface FormState {
@@ -23,9 +23,10 @@ interface FormState {
   modal_price: string;
   stock: string;
   category: string;
+  image_url: string;
 }
 
-const EMPTY: FormState = { name: '', price: '', modal_price: '', stock: '', category: '' };
+const EMPTY: FormState = { name: '', price: '', modal_price: '', stock: '', category: '', image_url: '' };
 
 export default function Products({ store }: { store: Store }) {
   const [products, setProducts] = useState<Product[]>([]);
@@ -75,8 +76,24 @@ export default function Products({ store }: { store: Store }) {
       modal_price: String(p.modal_price),
       stock: String(p.stock),
       category: p.category || '',
+      image_url: p.image_url || '',
     });
     setOpen(true);
+  }
+
+  async function pickImage(file: File | undefined) {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error('Pilih file gambar (JPG, PNG, dll)');
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('Ukuran gambar maksimal 2 MB');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => setForm((f) => ({ ...f, image_url: String(reader.result) }));
+    reader.readAsDataURL(file);
   }
 
   async function save(e: React.FormEvent) {
@@ -95,6 +112,7 @@ export default function Products({ store }: { store: Store }) {
       modal_price: modal,
       stock,
       category: form.category.trim() || null,
+      image_url: form.image_url || null,
     };
     let error;
     if (editing) {
@@ -165,25 +183,38 @@ export default function Products({ store }: { store: Store }) {
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {filtered.map((p) => (
             <Card key={p.id}>
-              <CardContent className="flex flex-col gap-1.5 p-4">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="truncate font-bold">{p.name}</p>
-                    {p.category && (
-                      <Badge variant="outline" className="mt-0.5">
-                        {p.category}
-                      </Badge>
-                    )}
+              <CardContent className="flex gap-3 p-4">
+                {p.image_url ? (
+                  <img
+                    src={p.image_url}
+                    alt={p.name}
+                    className="h-20 w-20 shrink-0 rounded-lg border object-cover"
+                  />
+                ) : (
+                  <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-lg border bg-muted">
+                    <Package className="h-8 w-8 text-muted-foreground" />
                   </div>
-                  <Button size="icon" variant="ghost" onClick={() => openEdit(p)} aria-label="Edit">
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                </div>
-                <div className="flex flex-wrap items-center gap-2 text-xs">
-                  <span className="text-sm font-bold text-primary">{formatRupiah(p.price)}</span>
-                  <Badge variant="secondary">Modal {formatRupiah(p.modal_price)}</Badge>
-                  <Badge variant={p.stock <= 2 ? 'destructive' : 'secondary'}>Stok {p.stock}</Badge>
-                  <Badge variant="outline">{p.sold_count}x terjual</Badge>
+                )}
+                <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="truncate font-bold">{p.name}</p>
+                      {p.category && (
+                        <Badge variant="outline" className="mt-0.5">
+                          {p.category}
+                        </Badge>
+                      )}
+                    </div>
+                    <Button size="icon" variant="ghost" onClick={() => openEdit(p)} aria-label="Edit">
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 text-xs">
+                    <span className="text-sm font-bold text-primary">{formatRupiah(p.price)}</span>
+                    <Badge variant="secondary">Modal {formatRupiah(p.modal_price)}</Badge>
+                    <Badge variant={p.stock <= 2 ? 'destructive' : 'secondary'}>Stok {p.stock}</Badge>
+                    <Badge variant="outline">{p.sold_count}x terjual</Badge>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -197,6 +228,49 @@ export default function Products({ store }: { store: Store }) {
             <DialogTitle>{editing ? 'Edit Produk' : 'Produk Baru'}</DialogTitle>
           </DialogHeader>
           <form onSubmit={save} className="flex flex-col gap-3">
+            <div className="space-y-1.5">
+              <Label>Gambar Produk</Label>
+              <div className="flex items-center gap-3">
+                {form.image_url ? (
+                  <img
+                    src={form.image_url}
+                    alt="Pratinjau"
+                    className="h-20 w-20 rounded-lg border object-cover"
+                  />
+                ) : (
+                  <div className="flex h-20 w-20 items-center justify-center rounded-lg border border-dashed bg-muted">
+                    <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                )}
+                <div className="flex flex-col gap-2">
+                  <Label
+                    htmlFor="p-image"
+                    className="inline-flex h-9 cursor-pointer items-center rounded-md border border-input bg-background px-3 text-sm font-medium hover:bg-accent"
+                  >
+                    Pilih Gambar
+                  </Label>
+                  <input
+                    id="p-image"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => pickImage(e.target.files?.[0])}
+                  />
+                  {form.image_url && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 text-destructive hover:text-destructive"
+                      onClick={() => setForm({ ...form, image_url: '' })}
+                    >
+                      <Trash2 className="mr-1 h-3.5 w-3.5" /> Hapus
+                    </Button>
+                  )}
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">JPG/PNG, maksimal 2 MB.</p>
+            </div>
             <div className="space-y-1.5">
               <Label htmlFor="p-name">Nama Produk</Label>
               <Input

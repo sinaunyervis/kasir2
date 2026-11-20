@@ -8,6 +8,7 @@ import Cashier from '../components/owner/Cashier';
 import Customers from '../components/owner/Customers';
 import Products from '../components/owner/Products';
 import CloseDay from '../components/owner/CloseDay';
+import MonthlyReport from '../components/owner/MonthlyReport';
 import Orders from '../components/owner/Orders';
 import PendingSummary from '../components/owner/PendingSummary';
 import {
@@ -20,6 +21,7 @@ import {
   MoonStar,
   ClipboardList,
   ListChecks,
+  BarChart3,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import {
@@ -42,7 +44,7 @@ const TABS = [
   { id: 'produk', label: 'Produk', icon: Package },
 ] as const;
 
-type TabId = (typeof TABS)[number]['id'] | 'tutup';
+type TabId = (typeof TABS)[number]['id'] | 'tutup' | 'laporan';
 
 export default function OwnerApp() {
   const navigate = useNavigate();
@@ -199,11 +201,12 @@ export default function OwnerApp() {
         {activeTab === 'rekap' && <PendingSummary store={store} />}
         {activeTab === 'pelanggan' && <Customers store={store} />}
         {activeTab === 'produk' && <Products store={store} />}
+        {activeTab === 'laporan' && <MonthlyReport store={store} />}
         {activeTab === 'tutup' && <CloseDay store={store} />}
       </main>
 
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t bg-card/95 backdrop-blur">
-        <div className="mx-auto grid max-w-3xl grid-cols-7">
+        <div className="mx-auto grid max-w-3xl grid-cols-8">
           {TABS.slice(0, 3).map((t) => (
             <NavButton
               key={t.id}
@@ -222,6 +225,16 @@ export default function OwnerApp() {
           >
             <MoonStar className="h-5 w-5" />
             Fullday
+          </button>
+          <button
+            onClick={() => goTab('laporan')}
+            className={cn(
+              'flex flex-col items-center gap-0.5 py-2 text-[11px] font-medium transition',
+              activeTab === 'laporan' ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            <BarChart3 className="h-5 w-5" />
+            Laporan
           </button>
           {TABS.slice(3).map((t) => (
             <NavButton key={t.id} tab={t} active={activeTab === t.id} badge={0} onClick={() => goTab(t.id)} />

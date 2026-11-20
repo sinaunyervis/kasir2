@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../../lib/supabase';
-import { formatRupiah, formatDate, type Product, type Store, type Transaction } from '../../lib/types';
+import { formatRupiah, formatDate, type Store, type Transaction } from '../../lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
@@ -26,23 +26,20 @@ interface RecapRow {
 export default function CloseDay({ store }: { store: Store }) {
   const [loading, setLoading] = useState(true);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
   const [recap, setRecap] = useState<RecapRow[] | null>(null);
   const [recapMeta, setRecapMeta] = useState<{ date: string; total: number; profit: number } | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   const load = useCallback(async () => {
-    const [tRes, pRes] = await Promise.all([
+    const [tRes] = await Promise.all([
       supabase
         .from('transactions')
         .select('*')
         .eq('store_token', store.token)
         .gte('created_at', startOfToday())
         .order('created_at', { ascending: false }),
-      supabase.from('products').select('*').eq('store_token', store.token),
     ]);
     if (tRes.data) setTransactions(tRes.data);
-    if (pRes.data) setProducts(pRes.data);
     setLoading(false);
   }, [store.token]);
 
@@ -79,6 +76,26 @@ export default function CloseDay({ store }: { store: Store }) {
       total: todayTotal,
       profit: todayProfit,
     });
+    const archive = transactions.map((t) => ({
+      id: t.id,
+      store_token: t.store_token,
+      customer_id: t.customer_id,
+      customer_name: t.customer_name,
+      items: t.items,
+      total: t.total,
+      profit: t.profit,
+      source: t.source,
+      status: t.status,
+      created_at: t.created_at,
+    }));
+    const { error: archiveError } = await supabase
+      .from('closed_transactions')
+      .upsert(archive, { onConflict: 'id' });
+    if (archiveError) {
+      setConfirmOpen(false);
+      toast.error('Gagal mengarsipkan transaksi. Rekap bulanan aman, coba lagi.');
+      return;
+    }
     const { error } = await supabase
       .from('transactions')
       .delete()
@@ -90,7 +107,7 @@ export default function CloseDay({ store }: { store: Store }) {
       return;
     }
     setTransactions([]);
-    toast.success('Aktivitas harian diakhiri. Transaksi hari ini sudah dikosongkan.');
+    toast.success('Aktivitas harian diakhiri. Transaksi hari ini diarsipkan ke rekap bulanan.');
   }
 
   function exportExcel() {
