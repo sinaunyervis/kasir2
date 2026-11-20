@@ -20,7 +20,7 @@ import { Label } from '../components/ui/label';
 import { Badge } from '../components/ui/badge';
 import { Skeleton } from '../components/ui/skeleton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
-import { LogOut, ShoppingCart, Plus, Minus, Trash2, Banknote, Loader2, KeyRound, BadgeCheck } from 'lucide-react';
+import { LogOut, ShoppingCart, Plus, Minus, Trash2, Banknote, Loader2, KeyRound, BadgeCheck, Package } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function CustomerCatalog() {
@@ -220,6 +220,18 @@ export default function CustomerCatalog() {
             products.map((p) => (
               <Card key={p.id} className="flex flex-col justify-between">
                 <CardContent className="flex flex-1 flex-col gap-1 p-3">
+                  {p.image_url ? (
+                    <img
+                      src={p.image_url}
+                      alt={p.name}
+                      loading="lazy"
+                      className="mb-1 h-28 w-full rounded-lg border object-cover"
+                    />
+                  ) : (
+                    <div className="mb-1 flex h-28 w-full items-center justify-center rounded-lg border bg-muted">
+                      <Package className="h-8 w-8 text-muted-foreground" />
+                    </div>
+                  )}
                   <p className="line-clamp-2 text-sm font-semibold leading-snug">{p.name}</p>
                   <p className="text-sm font-bold text-primary">{formatRupiah(p.price)}</p>
                   <Badge variant={p.stock <= 0 ? 'destructive' : 'secondary'} className="w-fit">
